@@ -53,7 +53,7 @@ def inicializar_bd():
 
     if count == 0:
       cursor.execute(
-          "INSERT INTO inventario (stock_galones) VALUES (%s);", (1000.0,)
+          "INSERT INTO inventario (stock_galones) VALUES (%s);", (500.0,)
       )
 
     # Confirmar todos los cambios en la base de datos
