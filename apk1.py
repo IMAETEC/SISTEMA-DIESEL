@@ -1,4 +1,3 @@
-
 import streamlit.components.v1 as components
 
 # Configuración inicial de la página
@@ -8,6 +7,68 @@ import datetime
 import pandas as pd
 import psycopg2
 import streamlit as st
+
+st.set_page_config(
+   page_title="control de diesel", page_icon="⛽", layout= "wide"
+)
+def inicializar_bd():
+  """Crea las tablas en PostgreSQL (Supabase) si no existen e inicializa el stock."""
+  conn = obtener_conexion()
+  cursor = conn.cursor()
+  try:
+    # Tabla de Inventario
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS inventario (
+                id SERIAL PRIMARY KEY,
+                stock_galones REAL NOT NULL
+            );
+        """)
+
+    # Tabla de Ventas
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id SERIAL PRIMARY KEY,
+                cliente TEXT NOT NULL,
+                galones REAL NOT NULL,
+                precio_galon REAL NOT NULL,
+                total REAL NOT NULL,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+    # Tabla de Ingresos (Cisterna)
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ingresos (
+                id SERIAL PRIMARY KEY,
+                proveedor TEXT NOT NULL,
+                galones REAL NOT NULL,
+                costo_total REAL NOT NULL,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+    # Verificar si el inventario tiene un registro base
+    cursor.execute("SELECT COUNT(*) FROM inventario;")
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+      cursor.execute(
+          "INSERT INTO inventario (stock_galones) VALUES (%s);", (1000.0,)
+      )
+
+    # Confirmar todos los cambios en la base de datos
+    conn.commit()
+
+  except Exception as e:
+    # Si hay algún error, deshacer cambios pendientes
+    conn.rollback()
+    st.error(f"Error al inicializar la base de datos: {e}")
+  finally:
+    cursor.close()
+    conn.close()
+    
+st.title("⛽ Control de Diésel")
+
 
 # ==========================================
 # BACKEND COMPATIBLE CON POSTGRESQL (SUPABASE)
@@ -86,64 +147,21 @@ def generar_ticket_html(id_venta, fecha, cliente, galones, precio_galon, total):
     return html_ticket
 
 def obtener_conexion():
-  """Establece conexión con PostgreSQL en Supabase detectando si está en local o en la nube."""
   url_conexion = None
 
-  # 1. Intentamos leer los Secretos (funciona automáticamente cuando está subido a Streamlit Cloud)
+  # Intenta leer desde Secrets si estás en Streamlit Cloud
   try:
-    if "DATABASE_URL" in st.secrets:
+    if hasattr(st, "secrets") and "DATABASE_URL" in st.secrets:
       url_conexion = st.secrets["DATABASE_URL"]
   except Exception:
-    pass
+    url_conexion = None
 
-  # 2. Si estamos ejecutando en la computadora (local), usamos la URL directamente
+  # Si estás en tu PC local:
   if not url_conexion:
-    # REEMPLAZA CON TU URL REAL DE SUPABASE
-    url_conexion = "postgresql://postgres:TU_CONTRASEÑA@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
+    # URL CON EL POOLER (Puerto 6543 y aws-0-...)
+    url_conexion = "postgresql://postgres.tqgrocjrhmtjtkdjfivm:salva97leo.@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
   return psycopg2.connect(url_conexion)
-
-def inicializar_bd():
-  """Crea las tablas en PostgreSQL si no existen e inicializa el stock."""
-  conn = obtener_conexion()
-  cursor = conn.cursor()
-  try:
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS inventario (
-                id SERIAL PRIMARY KEY,
-                stock_galones REAL
-            )
-        """)
-
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ventas (
-                id SERIAL PRIMARY KEY,
-                cliente TEXT,
-                galones REAL,
-                precio_galon REAL,
-                total REAL,
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ingresos (
-                id SERIAL PRIMARY KEY,
-                proveedor TEXT,
-                galones REAL,
-                costo_total REAL,
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-    cursor.execute("SELECT COUNT(*) FROM inventario")
-    if cursor.fetchone()[0] == 0:
-      cursor.execute("INSERT INTO inventario (stock_galones) VALUES (%s)", (1000.0,))
-
-    conn.commit()
-  finally:
-    cursor.close()
-    conn.close()
 
 
 def obtener_stock():
@@ -285,63 +303,7 @@ def obtener_reporte_ventas(fecha_inicio, fecha_fin):
 # ==========================================
 # 2. FRONTEND: Interfaz de Usuario
 # ==========================================
-def inicializar_bd():
-  """Crea las tablas en PostgreSQL (Supabase) si no existen e inicializa el stock."""
-  conn = obtener_conexion()
-  cursor = conn.cursor()
-  try:
-    # Tabla de Inventario
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS inventario (
-                id SERIAL PRIMARY KEY,
-                stock_galones REAL NOT NULL
-            );
-        """)
 
-    # Tabla de Ventas
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ventas (
-                id SERIAL PRIMARY KEY,
-                cliente TEXT NOT NULL,
-                galones REAL NOT NULL,
-                precio_galon REAL NOT NULL,
-                total REAL NOT NULL,
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-    # Tabla de Ingresos (Cisterna)
-    cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ingresos (
-                id SERIAL PRIMARY KEY,
-                proveedor TEXT NOT NULL,
-                galones REAL NOT NULL,
-                costo_total REAL NOT NULL,
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-    # Verificar si el inventario tiene un registro base
-    cursor.execute("SELECT COUNT(*) FROM inventario;")
-    count = cursor.fetchone()[0]
-
-    if count == 0:
-      cursor.execute(
-          "INSERT INTO inventario (stock_galones) VALUES (%s);", (1000.0,)
-      )
-
-    # Confirmar todos los cambios en la base de datos
-    conn.commit()
-
-  except Exception as e:
-    # Si hay algún error, deshacer cambios pendientes
-    conn.rollback()
-    st.error(f"Error al inicializar la base de datos: {e}")
-  finally:
-    cursor.close()
-    conn.close()
-    
-st.title("⛽ Control de Diésel")
 
 # Indicador principal de Stock
 stock_actual = obtener_stock()
@@ -445,7 +407,7 @@ with tab_historial:
         # Formatear la fecha para limpiar los microsegundos de PostgreSQL
         df["Fecha y Hora"] = pd.to_datetime(df["Fecha y Hora"]).dt.strftime('%Y-%m-%d %H:%M')
         
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df)
     else:
         st.info("No hay ventas registradas aún.")
 
