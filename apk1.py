@@ -8,9 +8,57 @@ import pandas as pd
 import psycopg2
 import streamlit as st
 
+# Configuración de la página
 st.set_page_config(
-   page_title="control de diesel", page_icon="⛽", layout= "wide"
+    page_title="Control de Diésel", page_icon="⛽", layout="wide"
 )
+
+
+# --- FUNCIÓN DE AUTENTICACIÓN ---
+def validar_usuario():
+  """Muestra el formulario de login y bloquea la app hasta autenticar."""
+  if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+  if not st.session_state["autenticado"]:
+    st.title("🔐 Acceso al Sistema")
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+      usuario = st.text_input("Usuario")
+      password = st.text_input("Contraseña", type="password")
+
+      if st.button("Iniciar Sesión", type="primary"):
+        # Obtener credenciales desde secrets o valores por defecto
+        user_ok = st.secrets.get("ADMIN_USER", "admin")
+        pass_ok = st.secrets.get("ADMIN_PASSWORD", "1234")
+
+        if usuario == user_ok and password == pass_ok:
+          st.session_state["autenticado"] = True
+          st.success("¡Acceso concedido!")
+          st.rerun()
+        else:
+          st.error("Usuario o contraseña incorrectos.")
+
+    return False
+  return True
+
+
+# --- CONTROL DE ACCESO ---
+if not validar_usuario():
+  st.stop()  # Detiene la ejecución para no mostrar el resto de la app
+
+# --- BOTÓN PARA CERRAR SESIÓN EN LA BARRA LATERAL ---
+with st.sidebar:
+  st.write(f"👤 **Usuario:** {st.secrets.get('ADMIN_USER', 'admin')}")
+  if st.button("🚪 Cerrar Sesión"):
+    st.session_state["autenticado"] = False
+    st.rerun()
+
+# --- A PARTIR DE AQUÍ CONTINÚA TU CÓDIGO NORMAL ---
+
+
+# Pestañas y contenido de la app...
 def inicializar_bd():
   """Crea las tablas en PostgreSQL (Supabase) si no existen e inicializa el stock."""
   conn = obtener_conexion()
@@ -53,7 +101,7 @@ def inicializar_bd():
 
     if count == 0:
       cursor.execute(
-          "INSERT INTO inventario (stock_galones) VALUES (%s);", (500.0,)
+          "INSERT INTO inventario (stock_galones) VALUES (%s);", (1000.0,)
       )
 
     # Confirmar todos los cambios en la base de datos
