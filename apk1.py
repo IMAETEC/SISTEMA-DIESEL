@@ -28,7 +28,7 @@ def validar_usuario():
       usuario = st.text_input("Usuario")
       password = st.text_input("Contraseña", type="password")
 
-      if st.button("Iniciar Sesión", type="primary"):
+      if st.button("Iniciar Sesión"):
         # Obtener credenciales desde secrets o valores por defecto
         user_ok = st.secrets.get("ADMIN_USER", "admin")
         pass_ok = st.secrets.get("ADMIN_PASSWORD", "1234")
@@ -36,7 +36,7 @@ def validar_usuario():
         if usuario == user_ok and password == pass_ok:
           st.session_state["autenticado"] = True
           st.success("¡Acceso concedido!")
-          st.rerun()
+          st.experimental_rerun()
         else:
           st.error("Usuario o contraseña incorrectos.")
 
@@ -53,7 +53,7 @@ with st.sidebar:
   st.write(f"👤 **Usuario:** {st.secrets.get('ADMIN_USER', 'admin')}")
   if st.button("🚪 Cerrar Sesión"):
     st.session_state["autenticado"] = False
-    st.rerun()
+    st.experimental_rerun()
 
 # --- A PARTIR DE AQUÍ CONTINÚA TU CÓDIGO NORMAL ---
 
@@ -346,7 +346,44 @@ def obtener_reporte_ventas(fecha_inicio, fecha_fin):
   finally:
     cursor.close()
     conn.close()
+def anular_venta(id_venta):
+  """Devuelve los galones al inventario y elimina el registro de la venta."""
+  try:
+    conn = obtener_conexion()
+    cursor = conn.cursor()
 
+    # 1. Obtener los galones de la venta a anular
+    cursor.execute("SELECT galones FROM ventas WHERE id = %s;", (id_venta,))
+    res = cursor.fetchone()
+
+    if res:
+      galones_a_devolver = res[0]
+
+      # 2. Sumar los galones de vuelta al inventario
+      cursor.execute(
+          """
+                UPDATE inventario 
+                SET stock_galones = stock_galones + %s 
+                WHERE id = (SELECT id FROM inventario ORDER BY id ASC LIMIT 1);
+            """,
+          (galones_a_devolver,),
+      )
+
+      # 3. Eliminar la venta del historial
+      cursor.execute("DELETE FROM ventas WHERE id = %s;", (id_venta,))
+
+      conn.commit()
+      st.success(
+          f"✅ Venta #{id_venta} anulada correctamente. Se devolvieron"
+          f" {galones_a_devolver:.2f} galones al stock."
+      )
+    else:
+      st.error("No se encontró ninguna venta con ese ID.")
+
+    cursor.close()
+    conn.close()
+  except Exception as e:
+    st.error(f"Error al anular la venta: {e}")
 
 # ==========================================
 # 2. FRONTEND: Interfaz de Usuario
@@ -458,6 +495,15 @@ with tab_historial:
         st.dataframe(df)
     else:
         st.info("No hay ventas registradas aún.")
+# Sección dentro de la pestaña de Historial/Reportes
+with st.expander("🚨 Anular / Borrar una Venta Errónea"):
+  id_a_borrar = st.number_input(
+      "Ingrese el ID de la Venta a anular", min_value=1, step=1
+  )
+
+  if st.button("Confirmar Anulación"):
+    anular_venta(id_a_borrar)
+    st.experimental_rerun()  # Recarga la app para mostrar el stock e historial actualizados        
 
 # Actualizamos las pestañas a 4 opciones
 
