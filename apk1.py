@@ -404,28 +404,7 @@ def obtener_ultimas_ventas():
 
 
 # --- INTERFAZ PARA ANULAR VENTA ---
-with st.expander("🚨 Anular / Borrar una Venta Errónea"):
-  ventas_disponibles = obtener_ultimas_ventas()
 
-  if ventas_disponibles:
-    # Creamos un diccionario para mostrar texto claro y guardar el ID interno
-    opciones_ventas = {
-        f"ID #{v[0]} | Fecha: {v[1]} | {v[2]} galones | Total: S/{v[3]}": v[0]
-        for v in ventas_disponibles
-    }
-
-    venta_seleccionada = st.selectbox(
-        "Seleccione la venta que desea eliminar:", list(opciones_ventas.keys())
-    )
-
-    # Extraemos el ID exacto asignado a la opción elegida
-    id_a_borrar = opciones_ventas[venta_seleccionada]
-
-    if st.button("Confirmar Anulación"):
-      anular_venta(int(id_a_borrar))  # Aseguramos que sea entero
-      st.rerun()
-  else:
-    st.info("No hay ventas registradas para anular.")
 
 # ==========================================
 # 2. FRONTEND: Interfaz de Usuario
