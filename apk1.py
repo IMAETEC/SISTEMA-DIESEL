@@ -36,7 +36,7 @@ def validar_usuario():
         if usuario == user_ok and password == pass_ok:
           st.session_state["autenticado"] = True
           st.success("¡Acceso concedido!")
-          st.rerun()
+          st.experimental_rerun()
         else:
           st.error("Usuario o contraseña incorrectos.")
 
@@ -53,7 +53,7 @@ with st.sidebar:
   st.write(f"👤 **Usuario:** {st.secrets.get('ADMIN_USER', 'admin')}")
   if st.button("🚪 Cerrar Sesión"):
     st.session_state["autenticado"] = False
-    st.rerun()
+    st.experimental_rerun()
 
 # --- A PARTIR DE AQUÍ CONTINÚA TU CÓDIGO NORMAL ---
 
@@ -384,6 +384,48 @@ def anular_venta(id_venta):
     conn.close()
   except Exception as e:
     st.error(f"Error al anular la venta: {e}")
+# --- FUNCIÓN PARA OBTENER LAS ÚLTIMAS VENTAS ---
+def obtener_ultimas_ventas():
+  try:
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    # Trae los datos de las últimas 20 ventas
+    cursor.execute(
+        "SELECT id, fecha, galones, total FROM ventas ORDER BY id DESC LIMIT"
+        " 20;"
+    )
+    ventas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return ventas
+  except Exception as e:
+    st.error(f"Error al obtener ventas: {e}")
+    return []
+
+
+# --- INTERFAZ PARA ANULAR VENTA ---
+with st.expander("🚨 Anular / Borrar una Venta Errónea"):
+  ventas_disponibles = obtener_ultimas_ventas()
+
+  if ventas_disponibles:
+    # Creamos un diccionario para mostrar texto claro y guardar el ID interno
+    opciones_ventas = {
+        f"ID #{v[0]} | Fecha: {v[1]} | {v[2]} galones | Total: S/{v[3]}": v[0]
+        for v in ventas_disponibles
+    }
+
+    venta_seleccionada = st.selectbox(
+        "Seleccione la venta que desea eliminar:", list(opciones_ventas.keys())
+    )
+
+    # Extraemos el ID exacto asignado a la opción elegida
+    id_a_borrar = opciones_ventas[venta_seleccionada]
+
+    if st.button("Confirmar Anulación"):
+      anular_venta(int(id_a_borrar))  # Aseguramos que sea entero
+      st.rerun()
+  else:
+    st.info("No hay ventas registradas para anular.")
 
 # ==========================================
 # 2. FRONTEND: Interfaz de Usuario
@@ -473,7 +515,7 @@ with tab_ingreso:
             exito, msj = registrar_ingreso(proveedor, galones_ingreso, costo_total)
             if exito:
                 st.success(msj)
-                st.rerun()  # Cambiar a st.rerun() si actualizaste Streamlit
+                st.experimental_rerun()  # Cambiar a st.rerun() si actualizaste Streamlit
 
 # ------------------------------------------
 # PESTAÑA 3: HISTORIAL DE MOVIMIENTOS
@@ -503,7 +545,7 @@ with st.expander("🚨 Anular / Borrar una Venta Errónea"):
 
   if st.button("Confirmar Anulación"):
     anular_venta(id_a_borrar)
-    st.rerun()  # Recarga la app para mostrar el stock e historial actualizados        
+    st.experimental_rerun()  # Recarga la app para mostrar el stock e historial actualizados        
 
 # Actualizamos las pestañas a 4 opciones
 # ... (Mantienes el contenido de las pestañas 1, 2 y 3) ...
