@@ -36,7 +36,7 @@ def validar_usuario():
         if usuario == user_ok and password == pass_ok:
           st.session_state["autenticado"] = True
           st.success("¡Acceso concedido!")
-          st.experimental_rerun()
+          st.rerun()
         else:
           st.error("Usuario o contraseña incorrectos.")
 
@@ -53,7 +53,7 @@ with st.sidebar:
   st.write(f"👤 **Usuario:** {st.secrets.get('ADMIN_USER', 'admin')}")
   if st.button("🚪 Cerrar Sesión"):
     st.session_state["autenticado"] = False
-    st.experimental_rerun()
+    st.rerun()
 
 # --- A PARTIR DE AQUÍ CONTINÚA TU CÓDIGO NORMAL ---
 
@@ -515,7 +515,7 @@ with tab_ingreso:
             exito, msj = registrar_ingreso(proveedor, galones_ingreso, costo_total)
             if exito:
                 st.success(msj)
-                st.experimental_rerun()  # Cambiar a st.rerun() si actualizaste Streamlit
+                st.rerun()  # Cambiar a st.rerun() si actualizaste Streamlit
 
 # ------------------------------------------
 # PESTAÑA 3: HISTORIAL DE MOVIMIENTOS
@@ -545,7 +545,7 @@ with st.expander("🚨 Anular / Borrar una Venta Errónea"):
 
   if st.button("Confirmar Anulación"):
     anular_venta(id_a_borrar)
-    st.experimental_rerun()  # Recarga la app para mostrar el stock e historial actualizados        
+    st.rerun()  # Recarga la app para mostrar el stock e historial actualizados        
 
 # Actualizamos las pestañas a 4 opciones
 # ... (Mantienes el contenido de las pestañas 1, 2 y 3) ...
