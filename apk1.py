@@ -121,78 +121,120 @@ st.title("⛽ Control de Diésel")
 # ==========================================
 # BACKEND COMPATIBLE CON POSTGRESQL (SUPABASE)
 # ==========================================
-def generar_ticket_html(id_venta, fecha, cliente, galones, precio_galon, total):
-    """Genera la estructura del ticket en HTML y el script para imprimir."""
-    html_ticket = f"""
+def generar_ticket_html(
+    id_venta, fecha, cliente, galones, precio_galon, total, *args
+):
+  # Conversiones seguras
+  try:
+    id_num = f"{int(id_venta):06d}"
+  except (ValueError, TypeError):
+    id_num = str(id_venta)
+
+  try:
+    galones_num = f"{float(galones):.2f}"
+  except (ValueError, TypeError):
+    galones_num = str(galones)
+
+  try:
+    precio_num = f"{float(precio_galon):.2f}"
+  except (ValueError, TypeError):
+    precio_num = str(precio_galon)
+
+  try:
+    total_num = f"{float(total):.2f}"
+  except (ValueError, TypeError):
+    total_num = str(total)
+
+  cliente_nombre = str(cliente) if cliente else "Cliente Varios"
+
+  html_code = f"""
     <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="utf-8">
         <style>
+            @page {{
+                size: 80mm auto;
+                margin: 0mm;
+            }}
             body {{
+                width: 78mm;
                 font-family: 'Courier New', Courier, monospace;
-                width: 280px;
-                margin: 0 auto;
-                padding: 10px;
-                background-color: #fff;
+                font-size: 13px;
+                line-height: 1.2;
                 color: #000;
+                background-color: #fff;
+                margin: 0 auto;
+                padding: 10px 5px;
             }}
             .text-center {{ text-align: center; }}
-            .linea {{ border-top: 1px dashed #000; margin: 8px 0; }}
-            .flex-between {{ display: flex; justify-content: space-between; }}
+            .text-right {{ text-align: right; }}
             .bold {{ font-weight: bold; }}
+            .linea {{ border-top: 1px dashed #000; margin: 8px 0; }}
+            table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+            th, td {{ text-align: left; padding: 2px 0; }}
+            .btn-print {{
+                display: block;
+                width: 100%;
+                background-color: #007bff;
+                color: white;
+                padding: 10px;
+                text-align: center;
+                font-size: 16px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-bottom: 15px;
+            }}
             @media print {{
-                .no-print {{ display: none; }}
+                .btn-print {{ display: none; }}
             }}
         </style>
     </head>
     <body>
-        <div class="text-center">
-            <h3 style="margin:0;">ESTACIÓN DE SERVICIO WM</h3>
-            <p style="margin:2px 0;">Control de Diésel</p>
-            <p style="margin:2px 0; font-size: 12px;">Ticket N°: #{id_venta:05d}</p>
-            <p style="margin:2px 0; font-size: 12px;">Fecha: {fecha}</p>
-        </div>
+        <button class="btn-print" onclick="window.print()">🖨️ IMPRIMIR TICKET</button>
+        
+        <div class="text-center bold" style="font-size: 16px;">ESTACIÓN DE SERVICIO WM</div>
+        <div class="text-center">Venta de Combustible / Diésel</div>
         
         <div class="linea"></div>
         
-        <p style="margin:4px 0; font-size: 13px;"><strong>Cliente:</strong> {cliente}</p>
+        <div><b>Ticket:</b> #{id_num}</div>
+        <div><b>Fecha:</b> {fecha}</div>
+        <div><b>Cliente:</b> {cliente_nombre}</div>
         
         <div class="linea"></div>
         
-        <div class="flex-between" style="font-size: 13px;">
-            <span>Producto:</span>
-            <span>Diésel B5</span>
-        </div>
-        <div class="flex-between" style="font-size: 13px;">
-            <span>Cantidad:</span>
-            <span>{galones:.2f} Gal</span>
-        </div>
-        <div class="flex-between" style="font-size: 13px;">
-            <span>Precio / Gal:</span>
-            <span>S/ {precio_galon:.2f}</span>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>DESCRIPCIÓN</th>
+                    <th class="text-right">CANT.</th>
+                    <th class="text-right">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DIÉSEL B5</td>
+                    <td class="text-right">{galones_num} G.</td>
+                    <td class="text-right">S/ {total_num}</td>
+                </tr>
+            </tbody>
+        </table>
         
         <div class="linea"></div>
         
-        <div class="flex-between bold" style="font-size: 15px;">
-            <span>TOTAL:</span>
-            <span>S/ {total:.2f}</span>
+        <div class="text-right"><b>Precio/Galón:</b> S/ {precio_num}</div>
+        <div class="text-right bold" style="font-size: 16px; margin-top: 5px;">
+            TOTAL A PAGAR: S/ {total_num}
         </div>
         
         <div class="linea"></div>
-        
-        <p class="text-center" style="font-size: 11px; margin-top: 10px;">¡Gracias por su compra!</p>
-        
-        <!-- Botón que activa la impresión del sistema operativo -->
-        <div class="text-center no-print" style="margin-top: 15px;">
-            <button onclick="window.print()" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                🖨️ Imprimir Ticket
-            </button>
-        </div>
+        <div class="text-center" style="margin-top: 10px;">¡Gracias por su compra!</div>
     </body>
     </html>
     """
-    return html_ticket
+  return html_code
 
 def obtener_conexion():
   url_conexion = None
