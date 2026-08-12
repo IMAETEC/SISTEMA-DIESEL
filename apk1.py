@@ -496,7 +496,7 @@ with tab_venta:
     with st.form("form_venta", clear_on_submit=False):
         cliente = st.text_input("Nombre del Cliente", placeholder="Ej. Juan Pérez")
         galones = st.number_input("Cantidad de Galones a vender", min_value=0.1, step=1.0)
-        precio_galon = st.number_input("Precio por Galón", min_value=0.1, value=15.50, step=0.10)
+        precio_galon = st.number_input("Precio por Galón", min_value=0.1, value=23.50, step=0.10)
         
         btn_vender = st.form_submit_button("Confirmar Venta")
         
