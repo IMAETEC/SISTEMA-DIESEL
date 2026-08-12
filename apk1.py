@@ -269,51 +269,63 @@ def obtener_stock():
     conn.close()
 
 
-def registrar_venta(cliente, galones, total):
-    try:
-        conn = obtener_conexion()
-        cursor = conn.cursor()
+def registrar_venta(cliente, galones, precio_galon):
+  try:
+    conn = obtener_conexion()
+    cursor = conn.cursor()
 
-        # 1. VERIFICAR STOCK ANTES DE VENDER
-        cursor.execute("SELECT stock_galones FROM inventario ORDER BY id ASC LIMIT 1;")
-        res = cursor.fetchone()
-        
-        if res is None:
-            st.error("No se ha configurado el inventario inicial.")
-            return False
-            
-        stock_actual = float(res[0])
-        
-        if stock_actual < float(galones):
-            st.error(f"⚠️ Stock insuficiente. Disponible: {stock_actual:.2f} galones.")
-            return False
+    # Conversión a números
+    galones_flt = float(galones)
+    precio_flt = float(precio_galon)
+    total_flt = galones_flt * precio_flt
 
-        # 2. DESCONTAR EL STOCK (Automático)
-        cursor.execute("""
+    # 1. Verificar stock disponible
+    cursor.execute(
+        "SELECT stock_galones FROM inventario ORDER BY id ASC LIMIT 1;"
+    )
+    res = cursor.fetchone()
+
+    if res is None:
+      return False, "No se ha configurado el inventario inicial."
+
+    stock_actual = float(res[0])
+
+    if stock_actual < galones_flt:
+      return (
+          False,
+          f"⚠️ Stock insuficiente. Disponible: {stock_actual:.2f} galones.",
+      )
+
+    # 2. Descontar stock del inventario
+    cursor.execute(
+        """
             UPDATE inventario 
             SET stock_galones = stock_galones - %s 
             WHERE id = (SELECT id FROM inventario ORDER BY id ASC LIMIT 1);
-        """, (float(galones),))
+        """,
+        (galones_flt,),
+    )
 
-        # 3. REGISTRAR LA VENTA
-        cursor.execute("""
-            INSERT INTO ventas (fecha, cliente, galones, total) 
-            VALUES (CURRENT_TIMESTAMP, %s, %s, %s);
-        """, (cliente, float(galones), float(total)))
+    # 3. Insertar venta incluyendo precio_galon
+    cursor.execute(
+        """
+            INSERT INTO ventas (fecha, cliente, galones, precio_galon, total) 
+            VALUES (CURRENT_TIMESTAMP, %s, %s, %s, %s);
+        """,
+        (cliente, galones_flt, precio_flt, total_flt),
+    )
 
-        # 4. GUARDAR CAMBIOS DEFINITIVAMENTE
-        conn.commit()
-        
-        cursor.close()
-        conn.close()
-        return True
+    # 4. Confirmar transacción
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-    except Exception as e:
-        # Si algo falla, deshace todos los cambios para no corromper datos
-        if 'conn' in locals(): conn.rollback()
-        st.error(f"Error crítico al registrar: {e}")
-        return False
+    return True, f"Venta registrada con éxito. Total: S/ {total_flt:.2f}"
 
+  except Exception as e:
+    if "conn" in locals():
+      conn.rollback()
+    return False, f"Error crítico al registrar: {e}"
 
 def registrar_ingreso(proveedor, galones, costo_total):
   """Registra la llegada de cisterna y aumenta el stock."""
