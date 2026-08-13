@@ -139,7 +139,7 @@ def obtener_conexion():
     url_conexion = "postgresql://postgres.tqgrocjrhmtjtkdjfivm:salva97leo.@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
   return psycopg2.connect(url_conexion)
-
+import urllib.parse
 
 
 def generar_ticket_html(
@@ -168,7 +168,7 @@ def generar_ticket_html(
 
   cliente_nombre = str(cliente) if cliente else "Cliente Varios"
 
-  # Texto plano estructurado para RawBT
+  # Texto plano para la impresora
   texto_ticket = f"""
   ESTACION DE SERVICIO
   Venta de Diesel B5
@@ -187,10 +187,10 @@ TOTAL A PAGAR: S/ {total_num}
 
 """
 
-  # Codificación segura para URL
+  # Codificación para URL
   texto_encoded = urllib.parse.quote(texto_ticket)
 
-  # Intent nativo para Android / RawBT
+  # Intent directo para Android / RawBT
   rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;end;"
 
   html_code = f"""
@@ -234,9 +234,7 @@ TOTAL A PAGAR: S/ {total_num}
                 border: none;
                 border-radius: 5px;
                 cursor: pointer;
-                text-decoration: none;
                 box-sizing: border-box;
-                display: inline-block;
             }}
             .btn-pc {{
                 background-color: #007bff;
@@ -255,8 +253,14 @@ TOTAL A PAGAR: S/ {total_num}
     <body>
         <div class="panel-botones">
             <button class="btn btn-pc" onclick="window.print()">💻 PC</button>
-            <a href="{rawbt_intent}" target="_top" class="btn btn-tablet">⚡ Tablet / RawBT</a>
+            <button class="btn btn-tablet" onclick="imprimirRawBT()">⚡ Tablet / RawBT</button>
         </div>
+        
+        <script>
+            function imprimirRawBT() {{
+                window.location.href = "{rawbt_intent}";
+            }}
+        </script>
         
         <div class="text-center bold" style="font-size: 16px;">ESTACION DE SERVICIO</div>
         <div class="text-center">Venta de Combustible / Diesel</div>
@@ -299,6 +303,9 @@ TOTAL A PAGAR: S/ {total_num}
     </html>
     """
   return html_code
+
+
+                            
 
 def obtener_stock():
   """Obtiene el stock actual de diésel."""
