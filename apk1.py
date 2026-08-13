@@ -140,6 +140,7 @@ def obtener_conexion():
 
   return psycopg2.connect(url_conexion)
 
+
 def generar_ticket_html(
     id_venta, fecha, cliente, galones, precio_galon, total, *args
 ):
@@ -185,7 +186,7 @@ TOTAL A PAGAR: S/ {total_num}
 
 """
 
-  # Codificación Base64 limpia para RawBT
+  # Codificación Base64
   base64_ticket = base64.b64encode(texto_ticket.encode("utf-8")).decode(
       "utf-8"
   )
@@ -233,8 +234,6 @@ TOTAL A PAGAR: S/ {total_num}
                 border-radius: 5px;
                 cursor: pointer;
                 box-sizing: border-box;
-                text-decoration: none;
-                display: inline-block;
             }}
             .btn-pc {{
                 background-color: #007bff;
@@ -253,8 +252,19 @@ TOTAL A PAGAR: S/ {total_num}
     <body>
         <div class="panel-botones">
             <button class="btn btn-pc" onclick="window.print()">💻 PC</button>
-            <a href="{rawbt_url}" target="_top" class="btn btn-tablet">⚡ Tablet / RawBT</a>
+            <button class="btn btn-tablet" onclick="imprimirRawBT()">⚡ Tablet / RawBT</button>
         </div>
+        
+        <script>
+            function imprimirRawBT() {{
+                var url = "{rawbt_url}";
+                try {{
+                    window.top.location.href = url;
+                }} catch (e) {{
+                    window.location.href = url;
+                }}
+            }}
+        </script>
         
         <div class="text-center bold" style="font-size: 16px;">ESTACION DE SERVICIO</div>
         <div class="text-center">Venta de Combustible / Diesel</div>
@@ -296,8 +306,7 @@ TOTAL A PAGAR: S/ {total_num}
     </body>
     </html>
     """
-  return html_code
-            
+  return html_code            
 
 
                             
