@@ -2,7 +2,7 @@ import streamlit.components.v1 as components
 
 # Configuración inicial de la página
 
-
+import urllib.parse
 import datetime
 import pandas as pd
 import psycopg2
@@ -121,6 +121,7 @@ st.title("⛽ Control de Diésel")
 # ==========================================
 # BACKEND COMPATIBLE CON POSTGRESQL (SUPABASE)
 # ==========================================
+
 def generar_ticket_html(
     id_venta, fecha, cliente, galones, precio_galon, total, *args
 ):
@@ -147,6 +148,28 @@ def generar_ticket_html(
 
   cliente_nombre = str(cliente) if cliente else "Cliente Varios"
 
+  # 1. Texto plano para enviar a RawBT en Android (Rápido)
+  texto_ticket = f"""
+  ESTACION DE SERVICIO
+  Venta de Diesel B5
+================================
+Ticket:  #{id_num}
+Fecha:   {fecha}
+Cliente: {cliente_nombre}
+================================
+CANTIDAD:  {galones_num} G.
+PRECIO/G:  S/ {precio_num}
+--------------------------------
+TOTAL A PAGAR: S/ {total_num}
+================================
+   ¡Gracias por su compra!
+
+
+"""
+  texto_encoded = urllib.parse.quote(texto_ticket)
+  rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;end;"
+
+  # 2. HTML completo (PC + Visualización)
   html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -173,28 +196,45 @@ def generar_ticket_html(
             .linea {{ border-top: 1px dashed #000; margin: 8px 0; }}
             table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
             th, td {{ text-align: left; padding: 2px 0; }}
-            .btn-print {{
-                display: block;
-                width: 100%;
-                background-color: #007bff;
-                color: white;
-                padding: 10px;
+            
+            .panel-botones {{
+                display: flex;
+                gap: 8px;
+                margin-bottom: 15px;
+            }}
+            .btn {{
+                flex: 1;
+                padding: 12px 5px;
                 text-align: center;
-                font-size: 16px;
+                font-size: 13px;
+                font-weight: bold;
                 border: none;
                 border-radius: 5px;
                 cursor: pointer;
-                margin-bottom: 15px;
+                text-decoration: none;
+                box-sizing: border-box;
             }}
+            .btn-pc {{
+                background-color: #007bff;
+                color: white;
+            }}
+            .btn-tablet {{
+                background-color: #28a745;
+                color: white;
+            }}
+            
             @media print {{
-                .btn-print {{ display: none; }}
+                .panel-botones {{ display: none !important; }}
             }}
         </style>
     </head>
     <body>
-        <button class="btn-print" onclick="window.print()">🖨️ IMPRIMIR TICKET</button>
+        <div class="panel-botones">
+            <button class="btn btn-pc" onclick="window.print()">💻 Imprimir (PC)</button>
+            <a href="{rawbt_intent}" class="btn btn-tablet">⚡ Imprimir (Tablet/RawBT)</a>
+        </div>
         
-        <div class="text-center bold" style="font-size: 16px;">ESTACIÓN DE SERVICIO WM</div>
+        <div class="text-center bold" style="font-size: 16px;">ESTACIÓN DE SERVICIO</div>
         <div class="text-center">Venta de Combustible / Diésel</div>
         
         <div class="linea"></div>
