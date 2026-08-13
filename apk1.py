@@ -183,72 +183,7 @@ TOTAL A PAGAR: S/ {total_num}
             body {{
                 width: 78mm;
                 font-family: 'Courier New', Courier, monospace;
-                font-size: 13px;
-                line-height: 1.2;
-                color: #000;
-                background-color: #fff;
-                margin: 0 auto;
-                padding: 10px 5px;
-            }}
-            .text-center {{ text-align: center; }}
-            .text-right {{ text-align: right; }}
-            .bold {{ font-weight: bold; }}
-            .linea {{ border-top: 1px dashed #000; margin: 8px 0; }}
-            table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
-            th, td {{ text-align: left; padding: 2px 0; }}
-            
-            .panel-botones {{
-                display: flex;
-                gap: 8px;
-                margin-bottom: 15px;
-            }}
-            .btn {{
-                flex: 1;
-                padding: 12px 5px;
-                text-align: center;
-                font-size: 13px;
-                font-weight: bold;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                text-decoration: none;
-                box-sizing: border-box;
-            }}
-            .btn-pc {{
-                background-color: #007bff;
-                color: white;
-            }}
-            .btn-tablet {{
-                background-color: #28a745;
-                color: white;
-            }}
-            
-            @media print {{
-                .panel-botones {{ display: none !important; }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="panel-botones">
-            <button class="btn btn-pc" onclick="window.print()">💻 Imprimir (PC)</button>
-            <a href="{rawbt_intent}" class="btn btn-tablet">⚡ Imprimir (Tablet/RawBT)</a>
-        </div>
-        
-        <div class="text-center bold" style="font-size: 16px;">ESTACIÓN DE SERVICIO</div>
-        <div class="text-center">Venta de Combustible / Diésel</div>
-        
-        <div class="linea"></div>
-        
-        <div><b>Ticket:</b> #{id_num}</div>
-        <div><b>Fecha:</b> {fecha}</div>
-        <div><b>Cliente:</b> {cliente_nombre}</div>
-        
-        <div class="linea"></div>
-        
-        <table>
-            <thead>
-                <tr>
-import urllib.parse
+
 
 
 def generar_ticket_html(
@@ -377,37 +312,7 @@ TOTAL A PAGAR: S/ {total_num}
         <div><b>Cliente:</b> {cliente_nombre}</div>
         
         <div class="linea"></div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>DESCRIPCIÓN</th>
-                    <th class="text-right">CANT.</th>
-                    <th class="text-right">TOTAL</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>DIÉSEL B5</td>
-                    <td class="text-right">{galones_num} G.</td>
-                    <td class="text-right">S/ {total_num}</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <div class="linea"></div>
-        
-        <div class="text-right"><b>Precio/Galón:</b> S/ {precio_num}</div>
-        <div class="text-right bold" style="font-size: 16px; margin-top: 5px;">
-            TOTAL A PAGAR: S/ {total_num}
-        </div>
-        
-        <div class="linea"></div>
-        <div class="text-center" style="margin-top: 10px;">¡Gracias por su compra!</div>
-    </body>
-    </html>
-    """
-  return html_code
+
 
 def obtener_conexion():
   url_conexion = None
@@ -426,6 +331,165 @@ def obtener_conexion():
 
   return psycopg2.connect(url_conexion)
 
+
+
+def generar_ticket_html(
+    id_venta, fecha, cliente, galones, precio_galon, total, *args
+):
+  # Conversiones seguras a texto/número
+  try:
+    id_num = f"{int(id_venta):06d}"
+  except (ValueError, TypeError):
+    id_num = str(id_venta)
+
+  try:
+    galones_num = f"{float(galones):.2f}"
+  except (ValueError, TypeError):
+    galones_num = str(galones)
+
+  try:
+    precio_num = f"{float(precio_galon):.2f}"
+  except (ValueError, TypeError):
+    precio_num = str(precio_galon)
+
+  try:
+    total_num = f"{float(total):.2f}"
+  except (ValueError, TypeError):
+    total_num = str(total)
+
+  cliente_nombre = str(cliente) if cliente else "Cliente Varios"
+
+  # Texto plano estructurado para RawBT
+  texto_ticket = f"""
+  ESTACION DE SERVICIO
+  Venta de Diesel B5
+================================
+Ticket:  #{id_num}
+Fecha:   {fecha}
+Cliente: {cliente_nombre}
+================================
+CANTIDAD:  {galones_num} G.
+PRECIO/G:  S/ {precio_num}
+--------------------------------
+TOTAL A PAGAR: S/ {total_num}
+================================
+   Gracias por su compra!
+
+
+"""
+
+  # Codificación segura para URL
+  texto_encoded = urllib.parse.quote(texto_ticket)
+
+  # Intent nativo para Android / RawBT
+  rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;S.browser_fallback_url=https://play.google.com/store/apps/details?id=ru.a41204.rawbtprinter;end;"
+
+  html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            @page {{
+                size: 80mm auto;
+                margin: 0mm;
+            }}
+            body {{
+                width: 78mm;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 13px;
+                line-height: 1.2;
+                color: #000;
+                background-color: #fff;
+                margin: 0 auto;
+                padding: 10px 5px;
+            }}
+            .text-center {{ text-align: center; }}
+            .text-right {{ text-align: right; }}
+            .bold {{ font-weight: bold; }}
+            .linea {{ border-top: 1px dashed #000; margin: 8px 0; }}
+            table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+            th, td {{ text-align: left; padding: 2px 0; }}
+            
+            .panel-botones {{
+                display: flex;
+                gap: 8px;
+                margin-bottom: 15px;
+            }}
+            .btn {{
+                flex: 1;
+                padding: 12px 5px;
+                text-align: center;
+                font-size: 13px;
+                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                box-sizing: border-box;
+                display: inline-block;
+            }}
+            .btn-pc {{
+                background-color: #007bff;
+                color: white;
+            }}
+            .btn-tablet {{
+                background-color: #28a745;
+                color: white;
+            }}
+            
+            @media print {{
+                .panel-botones {{ display: none !important; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="panel-botones">
+            <button class="btn btn-pc" onclick="window.print()">💻 PC</button>
+            <a href="{rawbt_intent}" target="_top" class="btn btn-tablet">⚡ Tablet / RawBT</a>
+        </div>
+        
+        <div class="text-center bold" style="font-size: 16px;">ESTACION DE SERVICIO</div>
+        <div class="text-center">Venta de Combustible / Diesel</div>
+        
+        <div class="linea"></div>
+        
+        <div><b>Ticket:</b> #{id_num}</div>
+        <div><b>Fecha:</b> {fecha}</div>
+        <div><b>Cliente:</b> {cliente_nombre}</div>
+        
+        <div class="linea"></div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>DESCRIPCION</th>
+                    <th class="text-right">CANT.</th>
+                    <th class="text-right">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DIESEL B5</td>
+                    <td class="text-right">{galones_num} G.</td>
+                    <td class="text-right">S/ {total_num}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="linea"></div>
+        
+        <div class="text-right"><b>Precio/Galon:</b> S/ {precio_num}</div>
+        <div class="text-right bold" style="font-size: 16px; margin-top: 5px;">
+            TOTAL A PAGAR: S/ {total_num}
+        </div>
+        
+        <div class="linea"></div>
+        <div class="text-center" style="margin-top: 10px;">Gracias por su compra!</div>
+    </body>
+    </html>
+    """
+  return html_code
 
 def obtener_stock():
   """Obtiene el stock actual de diésel."""
