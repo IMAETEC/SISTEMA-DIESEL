@@ -168,8 +168,9 @@ def generar_ticket_html(id_venta, fecha, cliente, galones, precio_galon, total, 
     # Texto ajustado a 42-48 caracteres (Ancho real de impresoras de 80mm)
     texto_ticket = f"""
 ================================================
-         ESTACION DE SERVICIO HEMESAC ⛽
-            Venta de Diesel B5 y más 
+         ESTACION DE SERVICIO HEMESAC 
+            Venta de Diesel B5
+            CEL.928 975 449
 ================================================
 Ticket : #{id_num}
 Fecha  : {fecha}
@@ -304,10 +305,7 @@ TOTAL A PAGAR:                      S/ {total_num}
     </html>
     """
     return html_code
-        
-        
-
-                            
+                                    
 
 def obtener_stock():
   """Obtiene el stock actual de diésel."""
