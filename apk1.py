@@ -191,7 +191,7 @@ TOTAL A PAGAR: S/ {total_num}
   texto_encoded = urllib.parse.quote(texto_ticket)
 
   # Intent nativo para Android / RawBT
-  rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;S.browser_fallback_url=https://play.google.com/store/apps/details?id=ru.a41204.rawbtprinter;end;"
+  rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;end;"
 
   html_code = f"""
     <!DOCTYPE html>
