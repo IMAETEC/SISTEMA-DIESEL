@@ -141,58 +141,55 @@ def obtener_conexion():
   return psycopg2.connect(url_conexion)
 
 
-def generar_ticket_html(
-    id_venta, fecha, cliente, galones, precio_galon, total, *args
-):
-  # Conversiones seguras a texto/número
-  try:
-    id_num = f"{int(id_venta):06d}"
-  except (ValueError, TypeError):
-    id_num = str(id_venta)
+def generar_ticket_html(id_venta, fecha, cliente, galones, precio_galon, total, *args):
+    # Conversiones seguras a texto/número
+    try:
+        id_num = f"{int(id_venta):06d}"
+    except (ValueError, TypeError):
+        id_num = str(id_venta)
+        
+    try:
+        galones_num = f"{float(galones):.2f}"
+    except (ValueError, TypeError):
+        galones_num = str(galones)
+        
+    try:
+        precio_num = f"{float(precio_galon):.2f}"
+    except (ValueError, TypeError):
+        precio_num = str(precio_galon)
+        
+    try:
+        total_num = f"{float(total):.2f}"
+    except (ValueError, TypeError):
+        total_num = str(total)
+        
+    cliente_nombre = str(cliente) if cliente else "Cliente Varios"
 
-  try:
-    galones_num = f"{float(galones):.2f}"
-  except (ValueError, TypeError):
-    galones_num = str(galones)
-
-  try:
-    precio_num = f"{float(precio_galon):.2f}"
-  except (ValueError, TypeError):
-    precio_num = str(precio_galon)
-
-  try:
-    total_num = f"{float(total):.2f}"
-  except (ValueError, TypeError):
-    total_num = str(total)
-
-  cliente_nombre = str(cliente) if cliente else "Cliente Varios"
-
-  # Texto plano para la impresora térmica
-  texto_ticket = f"""
-  ESTACION DE SERVICIO
-  Venta de Diesel B5
-================================
-Ticket:  #{id_num}
-Fecha:   {fecha}
+    # Texto ajustado a 42-48 caracteres (Ancho real de impresoras de 80mm)
+    texto_ticket = f"""
+================================================
+              ESTACION DE SERVICIO
+            Venta de Diesel B5
+================================================
+Ticket : #{id_num}
+Fecha  : {fecha}
 Cliente: {cliente_nombre}
-================================
-CANTIDAD:  {galones_num} G.
-PRECIO/G:  S/ {precio_num}
---------------------------------
-TOTAL A PAGAR: S/ {total_num}
-================================
-   Gracias por su compra!
+------------------------------------------------
+DESCRIPCION       CANTIDAD   PRECIO     TOTAL
+DIESEL B5         {galones_num} G.   S/ {precio_num}  S/ {total_num}
+------------------------------------------------
+TOTAL A PAGAR:                      S/ {total_num}
+================================================
+           ¡Gracias por su compra!
 
 
 """
 
-  # Codificación Base64
-  base64_ticket = base64.b64encode(texto_ticket.encode("utf-8")).decode(
-      "utf-8"
-  )
-  rawbt_url = f"rawbt:base64,{base64_ticket}"
+    # Codificación Base64
+    base64_ticket = base64.b64encode(texto_ticket.encode('utf-8')).decode('utf-8')
+    rawbt_url = f"rawbt:base64,{base64_ticket}"
 
-  html_code = f"""
+    html_code = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -306,8 +303,9 @@ TOTAL A PAGAR: S/ {total_num}
     </body>
     </html>
     """
-  return html_code            
-
+    return html_code
+        
+        
 
                             
 
