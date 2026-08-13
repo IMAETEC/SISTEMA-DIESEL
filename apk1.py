@@ -162,7 +162,7 @@ PRECIO/G:  S/ {precio_num}
 --------------------------------
 TOTAL A PAGAR: S/ {total_num}
 ================================
-   ¡Gracias por su compra!
+   Gracias por su compra!
 
 
 """
