@@ -1,7 +1,7 @@
 import streamlit.components.v1 as components
 
 # Configuración inicial de la página
-
+import base64
 import urllib.parse
 import datetime
 import pandas as pd
@@ -139,8 +139,6 @@ def obtener_conexion():
     url_conexion = "postgresql://postgres.tqgrocjrhmtjtkdjfivm:salva97leo.@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
   return psycopg2.connect(url_conexion)
-import urllib.parse
-
 
 def generar_ticket_html(
     id_venta, fecha, cliente, galones, precio_galon, total, *args
@@ -168,7 +166,7 @@ def generar_ticket_html(
 
   cliente_nombre = str(cliente) if cliente else "Cliente Varios"
 
-  # Texto plano para la impresora
+  # Texto plano para la impresora térmica
   texto_ticket = f"""
   ESTACION DE SERVICIO
   Venta de Diesel B5
@@ -187,11 +185,11 @@ TOTAL A PAGAR: S/ {total_num}
 
 """
 
-  # Codificación para URL
-  texto_encoded = urllib.parse.quote(texto_ticket)
-
-  # Intent directo para Android / RawBT
-  rawbt_intent = f"intent:{texto_encoded}#Intent;scheme=rawbt;package=ru.a41204.rawbtprinter;end;"
+  # Codificación Base64 limpia para RawBT
+  base64_ticket = base64.b64encode(texto_ticket.encode("utf-8")).decode(
+      "utf-8"
+  )
+  rawbt_url = f"rawbt:base64,{base64_ticket}"
 
   html_code = f"""
     <!DOCTYPE html>
@@ -235,6 +233,8 @@ TOTAL A PAGAR: S/ {total_num}
                 border-radius: 5px;
                 cursor: pointer;
                 box-sizing: border-box;
+                text-decoration: none;
+                display: inline-block;
             }}
             .btn-pc {{
                 background-color: #007bff;
@@ -253,14 +253,8 @@ TOTAL A PAGAR: S/ {total_num}
     <body>
         <div class="panel-botones">
             <button class="btn btn-pc" onclick="window.print()">💻 PC</button>
-            <button class="btn btn-tablet" onclick="imprimirRawBT()">⚡ Tablet / RawBT</button>
+            <a href="{rawbt_url}" target="_top" class="btn btn-tablet">⚡ Tablet / RawBT</a>
         </div>
-        
-        <script>
-            function imprimirRawBT() {{
-                window.location.href = "{rawbt_intent}";
-            }}
-        </script>
         
         <div class="text-center bold" style="font-size: 16px;">ESTACION DE SERVICIO</div>
         <div class="text-center">Venta de Combustible / Diesel</div>
@@ -303,6 +297,7 @@ TOTAL A PAGAR: S/ {total_num}
     </html>
     """
   return html_code
+            
 
 
                             
